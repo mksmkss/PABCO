@@ -1,6 +1,7 @@
 {
-    "inventory_excel": "",
+    "inventory_excel": "/Users/masataka/Library/CloudStorage/Box-Box/Personal/パブコ実習/エリア/エリア別　支給部品・先行部品在庫表NEW 2022.6.7.xlsx",
     "permanent_excel": "/Users/masataka/Library/CloudStorage/Box-Box/Personal/パブコ実習/エリア/常置在庫リスト支給品　棚入替え後（改正版）2021.12月.xlsx",
+    "permanent_db": "/Users/masataka/Library/CloudStorage/Box-Box/Personal/パブコ実習/部品リスト加工用221202.xlsm",
     "output_folder": "/Users/masataka/Library/CloudStorage/Box-Box/Personal/パブコ実習/加工後",
     "subject_folder": "/Users/masataka/Library/CloudStorage/Box-Box/Personal/パブコ実習/加工前"
 }

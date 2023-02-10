@@ -28,6 +28,9 @@ permanent_excel = pd.read_excel(permanent_path, sheet_name=None)
 permanent_df = permanent_excel["常置品入出庫表 (新)"].drop(
     permanent_excel["常置品入出庫表 (新)"].index[0:3]
 )
+permanent_db = settings["permanent_db"]
+permanent_db_excel = pd.read_excel(permanent_db, sheet_name=None)
+permanent_db_df = permanent_db_excel["DB"].drop(permanent_db_excel["DB"].index[0:3])
 
 # フォルダのパスを取得
 subject_path = settings["subject_folder"]
@@ -60,6 +63,41 @@ def get_products_list(dfs, sheet):
     return products
 
 
+def permanent_edit(supp, pro_num, dfs, sheet, pro_row):
+    pro_num_list = permanent_db_df.iloc[:, 0].tolist()
+    # K1送付済みかどうか
+    if pro_num in pro_num_list:
+        isDone = bool(
+            type(permanent_db_df.iloc[pro_num_list.index(pro_num), 4]) != float
+        )
+    else:
+        isDone = False
+    if supp == "発注点":
+        dfs[sheet].iat[pro_row + 6, 10] = "ﾊﾟﾌﾞｺｰｷから納入後、発送願います"
+        # 空欄かつdbにあったら
+    elif type(supp) == float and pro_num in pro_num_list:
+        dfs[sheet].iat[pro_row + 6, 10] = permanent_db_df.iloc[
+            pro_num_list.index(pro_num), 5
+        ]
+        # K1送付済み
+    elif isDone == True:
+        dfs[sheet].iat[pro_row + 6, 10] = "K1在庫 発送不要"
+    elif supp == "常置品":
+        if pro_num in pro_num_list:
+            isTent = bool(permanent_db_df.iloc[pro_num_list.index(pro_num), 3] > 0)
+            if isTent == True:
+                dfs[sheet].iat[pro_row + 6, 10] = "ﾃﾝﾄ在庫 発送お願いします"
+            else:
+                # 発注点管理かそれ以外
+                if permanent_db_df.iloc[pro_num_list.index(pro_num), 1] == "発注点管理":
+                    dfs[sheet].iat[pro_row + 6, 10] = "ﾊﾟﾌﾞｺｰｷから納入後、発送お願いします"
+                    dfs[sheet].iat[pro_row + 6, 2] = "発注点"
+                else:
+                    dfs[sheet].iat[pro_row + 6, 2] = "個別発注"
+        else:
+            dfs[sheet].iat[pro_row + 6, 10] = "常置品DBに登録されていません.確認お願いします"
+
+
 def search_place(arr, supp, pro_num, dfs, sheet, pro_row):
     """
     場所を検索し，セルに書き込むまでの関数
@@ -76,7 +114,6 @@ def search_place(arr, supp, pro_num, dfs, sheet, pro_row):
                 # rowはinventory_supply_df内の行番号
                 row = col_supply_list.index(i)
                 place = inventory_supply_df.iloc[row, 0]
-                # print(f"{sheet} {supp} {pro_row} {place}")
                 dfs[sheet].iat[pro_row + 6, 15] = place
                 break
     elif arr == "先行":
@@ -87,7 +124,6 @@ def search_place(arr, supp, pro_num, dfs, sheet, pro_row):
                 # numはinventory_ahead_df内の行番号
                 num = col_ahead_list.index(i)
                 place = f"{inventory_ahead_df.iloc[num, 0]} {inventory_ahead_df.iloc[num, 1]}"
-                # print(f"{excel} {sheet} {pro_row} {place}")
                 dfs[sheet].iat[pro_row + 6, 15] = place
                 break
     elif arr == "部品":
@@ -98,7 +134,6 @@ def search_place(arr, supp, pro_num, dfs, sheet, pro_row):
                 # numはpermanent_df内の行番号
                 num = col_permanent_list.index(i)
                 place = permanent_df.iloc[num, 0]
-                # print(f"{excel} {sheet} {pro_row} {place}")
                 dfs[sheet].iat[pro_row + 6, 15] = place
                 break
 
@@ -145,6 +180,7 @@ def main():
         # ファイル名と拡張子を分ける
         excel_name, excel_ext = os.path.splitext(excel)
         for sheet in dfs.keys():
+            print(f"{sheet}")
             # まず列を追加
             date = str(datetime.date.today()).replace("-", "/")
             dfs[sheet][date] = ""
@@ -157,6 +193,8 @@ def main():
             pre_supp = products[0][1]
             row = 0
             add_job_figure(dfs, sheet)
+            # K1工事かどうか
+            isK1 = bool(dfs[sheet].iat[1, 5][-4:] == "Ｋ１工事")
             for product in products:
                 """
                 product[0]:No.
@@ -169,15 +207,15 @@ def main():
                 # 日付を整形
                 modify_date(product, dfs, sheet, row)
                 # nanはfloat64型なのでnanの判定はこうする．i=="nan"ではだめ．
-                if (
-                    (type(product[2]) != float)
-                    and (product[2] != pre_supp)
-                    # and (product[1] != "部品")
-                ):
+                if (type(product[2]) != float) and (product[2] != pre_supp):
                     # 場所を検索してセルに書き込む
                     search_place(product[1], product[2], product[3], dfs, sheet, row)
                     # 前の補足を更新
                     pre_supp = product[2]
+                # 　次工程に追加
+                if isK1 == True and product[1] == "部品":
+                    permanent_edit(product[2], product[3], dfs, sheet, row)
+
         # Excelファイルを書き込む
         new_path = f"{output_path}/{excel_name}_output.xlsx"
         with pd.ExcelWriter(new_path) as writer:
@@ -196,10 +234,6 @@ def main():
         thick = Side(style="thick", color="000000")
         border = Border(top=side, bottom=side, left=side, right=side)
         border_none = Border(top=None, bottom=None, left=None, right=None)
-        border_top = Border(top=side)
-        border_bottom = Border(bottom=side)
-        border_horizontal = Border(left=side, right=side)
-        border_left_top = Border(left=side, top=side)
         thick_cell = Border(top=thick, bottom=side, left=side, right=side)
 
         wb = px.load_workbook(new_path)
@@ -361,6 +395,13 @@ def main():
             for row in wb[sheet].iter_rows(min_row=8):
                 for cell in row:
                     cell.alignment = center_alignment
+            """ 
+            次工程を左揃えに
+            wb[sheet].iter_rows(min_row=8)がgeneratorなのでlen()で長さを取得できない->sumをつかう
+            """
+            len = sum(1 for _ in wb[sheet].iter_rows(min_row=8))
+            for row in range(8, len + 8):
+                wb[sheet][f"K{row}"].alignment = left_alignment
             # セルの結合
             for cell in merge_cell_list:
                 wb[sheet].merge_cells(cell)
@@ -383,6 +424,7 @@ def main():
             # セルの罫線
             for row in wb[sheet].rows:
                 for cell in row:
+                    # cell.coordinate = A1, cell.value = そのセルの中身
                     if cell.coordinate in without_border_list:
                         wb[sheet][cell.coordinate].border = border_none
                     else:
