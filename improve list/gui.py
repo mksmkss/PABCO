@@ -76,7 +76,7 @@ class PathEntry(customtkinter.CTkFrame):
         self.button.place(relx=0.99, rely=0.5, anchor=tkinter.E)
 
     def open_folder(self):
-        if self.index <= 1:
+        if self.index <= 2:
             new_path = filedialog.askopenfilename(
                 initialdir="/",
                 filetypes=(("Excel .xlsx", "Excel .xls")),
