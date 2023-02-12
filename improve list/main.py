@@ -10,35 +10,39 @@ from openpyxl.styles.alignment import Alignment
 main_path = os.path.dirname(sys.argv[0])
 print(f"This program is working on {main_path}")
 
-_settings = open(f"{main_path}/settings.json", "r")
-# json -> 辞書型
-settings = json.load(_settings)
-
-# Excelファイルの読み込みのための設定
-inventory_path = settings["inventory_excel"]
-inventory_excel = pd.read_excel(inventory_path, sheet_name=None)
-inventory_supply_df = inventory_excel["支給品在庫検索"].drop(
-    inventory_excel["支給品在庫検索"].index[0:3]
-)
-inventory_ahead_df = inventory_excel["先行部品検索"].drop(
-    inventory_excel["先行部品検索"].index[0:3]
-)
-permanent_path = settings["permanent_excel"]
-permanent_excel = pd.read_excel(permanent_path, sheet_name=None)
-permanent_df = permanent_excel["常置品入出庫表 (新)"].drop(
-    permanent_excel["常置品入出庫表 (新)"].index[0:3]
-)
-permanent_db = settings["permanent_db"]
-permanent_db_excel = pd.read_excel(permanent_db, sheet_name=None)
-permanent_db_df = permanent_db_excel["DB"].drop(permanent_db_excel["DB"].index[0:3])
-
-# フォルダのパスを取得
-subject_path = settings["subject_folder"]
-output_path = settings["output_folder"]
 
 excels_list = []
 
 new_excel = {}
+
+
+def setting_files():
+    global inventory_supply_df, inventory_ahead_df, permanent_df, permanent_db_df, subject_path, output_path
+    _settings = open(f"{main_path}/settings.json", "r")
+    # json -> 辞書型
+    settings = json.load(_settings)
+
+    # Excelファイルの読み込みのための設定
+    inventory_path = settings["inventory_excel"]
+    inventory_excel = pd.read_excel(inventory_path, sheet_name=None)
+    inventory_supply_df = inventory_excel["支給品在庫検索"].drop(
+        inventory_excel["支給品在庫検索"].index[0:3]
+    )
+    inventory_ahead_df = inventory_excel["先行部品検索"].drop(
+        inventory_excel["先行部品検索"].index[0:3]
+    )
+    permanent_path = settings["permanent_excel"]
+    permanent_excel = pd.read_excel(permanent_path, sheet_name=None)
+    permanent_df = permanent_excel["常置品入出庫表 (新)"].drop(
+        permanent_excel["常置品入出庫表 (新)"].index[0:3]
+    )
+    permanent_db = settings["permanent_db"]
+    permanent_db_excel = pd.read_excel(permanent_db, sheet_name=None)
+    permanent_db_df = permanent_db_excel["DB"].drop(permanent_db_excel["DB"].index[0:3])
+
+    # フォルダのパスを取得
+    subject_path = settings["subject_folder"]
+    output_path = settings["output_folder"]
 
 
 def get_excel_list():
@@ -173,6 +177,7 @@ def modify_date(product, dfs, sheet, row):
 def main():
     # 補足を保存
     pre_supp = ""
+    setting_files()
 
     for excel in get_excel_list():
         # Excelファイルを読み込む. dfsには辞書型でシート名とデータフレームが入る
