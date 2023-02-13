@@ -1,10 +1,11 @@
+import datetime
 import json
 import os
 import sys
-import datetime
-import pandas as pd
+
 import openpyxl as px
-from openpyxl.styles import PatternFill, Font, Border, Side
+import pandas as pd
+from openpyxl.styles import Border, Font, PatternFill, Side
 from openpyxl.styles.alignment import Alignment
 
 main_path = os.path.dirname(sys.argv[0])
@@ -18,7 +19,7 @@ new_excel = {}
 
 def setting_files():
     global inventory_supply_df, inventory_ahead_df, permanent_df, permanent_db_df, subject_path, output_path
-    _settings = open(f"{main_path}/settings.json", "r")
+    _settings = open(f"{main_path}/settings.json", "r", encoding="utf-8")
     # json -> 辞書型
     settings = json.load(_settings)
 
@@ -51,7 +52,7 @@ def get_excel_list():
     """
     # os.listdir() -> ディレクトリ内のファイル名をリストで返す
     for file in os.listdir(subject_path):
-        if file.endswith(".xlsx") or file.endswith(".xls"):
+        if file.endswith(".xlsx") or file.endswith(".xls") or file.endswith(".xlsm"):
             excels_list.append(file)
     return excels_list
 

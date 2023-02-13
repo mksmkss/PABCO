@@ -1,18 +1,20 @@
+import json
 import os
 import sys
-import json
-import time
 import tkinter
-import customtkinter
+import platform
 from tkinter import filedialog
-from PIL import Image
 
+import customtkinter
 from main import main
+from PIL import Image
 
 customtkinter.set_appearance_mode("System")  # Modes: system (default), light, dark
 customtkinter.set_default_color_theme(
     "green"
 )  # Themes: blue (default), dark-blue, green
+
+system = platform.system()
 
 app = customtkinter.CTk()  # create CTk window like you do with the Tk window
 main_width = 880
@@ -22,7 +24,7 @@ app.title("Excel Auto Formatter")
 
 main_path = os.path.dirname(sys.argv[0])
 
-with open(f"{main_path}/settings.json", "r") as _settings:
+with open(f"{main_path}/settings.json", "r", encoding="utf-8") as _settings:
     global inventory_path, permanent_path, permanent_db, subject_path, output_path
     settings = json.load(_settings)
     inventory_path = settings["inventory_excel"]
@@ -77,13 +79,26 @@ class PathEntry(customtkinter.CTkFrame):
 
     def open_folder(self):
         if self.index <= 2:
-            new_path = filedialog.askopenfilename(
-                initialdir="/",
-                filetypes=(("Excel .xlsx", "Excel .xls")),
-            )
+            if system == "Darwin":
+                new_path = filedialog.askopenfilename(
+                    initialdir="/",
+                    filetypes=(("Excel .xlsx", "Excel .xls"),),
+                )
+            else:
+                new_path = filedialog.askopenfilename(
+                    initialdir="/",
+                    filetypes=(
+                        ("Excel", ".xlsx .xls"),
+                        ("ExcelMacro .xlsm"),
+                    ),
+                )
+                print(new_path)
+                new_path = new_path.replace("/", "\\")
         else:
             # フォルダーを選択する
             new_path = filedialog.askdirectory()
+            if system == "Windows":
+                new_path = new_path.replace("/", "\\")
         # まずは表示を変更，そうしないと値が変更できず表示されない
         self.path_disp.configure(state="normal")
         self.path_disp.delete(0, tkinter.END)
@@ -132,7 +147,7 @@ def Process():
     new_dic = {}
     for i in range(len(dic)):
         new_dic[dic_name[i]] = list(dic.values())[i]
-    with open(f"{main_path}/settings.json", "w") as _settings:
+    with open(f"{main_path}/settings.json", "w", encoding="utf-8") as _settings:
         json.dump(new_dic, _settings, indent=4, ensure_ascii=False)
     isFilled = True
     for i in range(len(dic)):
