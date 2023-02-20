@@ -1,7 +1,7 @@
 # PABCO
 Tools for PABCO co
 ## ダウンロード方法
-このページの`< > Code`ボタンからZIPファイルをダウンロードし，`Recquired Files`を取り出してください．これでダウンロードは完了です．`add place.exe`が実行ファイルとなっています．
+このページの`< > Code`ボタンからZIPファイルをダウンロードし，`Required Files`を取り出してください．これでダウンロードは完了です．`add place.exe`が実行ファイルとなっています．
 ## 使い方
 
 >**Note**
